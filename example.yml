@@ -1,0 +1,5 @@
+type: round-robin
+port: 3000
+backends:
+  - localhost:3001
+  - localhost:3002

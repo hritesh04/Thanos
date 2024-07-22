@@ -2,16 +2,19 @@ package cmd
 
 import (
 	"log/slog"
+	"net/http"
 	"os"
 
-	"github.com/hritesh04/thanos/core"
+	"github.com/hritesh04/thanos/internal"
+	"github.com/hritesh04/thanos/internal/proxy"
+	"github.com/hritesh04/thanos/internal/types"
 	"github.com/hritesh04/thanos/pkg/config"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
 
 var (
-	Lb      *core.LoadBalancer
+	Lb      types.IBalancer
 	cfgFile string
 	cfg     config.Config
 )
@@ -22,9 +25,9 @@ var startCmd = &cobra.Command{
 	Long:  "Start Thanos Server for Load Balancing",
 	Run: func(cmd *cobra.Command, args []string) {
 		initConfig()
-		Lb = core.NewLoadBalancer(cfg)
-		Lb.AddServer(cfg.Servers[0])
-		Lb.Start()
+		Lb = internal.NewLoadBalancer(cfg, proxy.NewReverseProxy)
+		http.HandleFunc("/", Lb.Serve)
+		http.ListenAndServe(":3000", nil)
 	},
 }
 

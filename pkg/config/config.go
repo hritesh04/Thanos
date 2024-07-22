@@ -6,3 +6,7 @@ type Config struct {
 	Servers    []string `yaml:"backends"`
 	ListenPort string   `yaml:"port"`
 }
+
+type Backend struct {
+	Url string `yaml:"url"`
+}

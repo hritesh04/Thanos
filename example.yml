@@ -1,5 +1,5 @@
 type: round-robin
-port: 3000
+port: "3000"
 backends:
-  - localhost:3001
-  - localhost:3002
+  - "http://localhost:3001"
+  - "http://localhost:3002"

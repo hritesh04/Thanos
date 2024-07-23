@@ -2,13 +2,16 @@ package types
 
 import (
 	"net/http"
+	"sync"
 
 	"github.com/hritesh04/thanos/internal/proxy"
 )
 
 type Server struct {
-	Url   string
-	Proxy proxy.IProxy
+	Url              string
+	ActiveConnection int
+	Mutex            sync.Mutex
+	Proxy            proxy.IProxy
 }
 
 type IBalancer interface {

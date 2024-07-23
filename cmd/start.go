@@ -27,7 +27,7 @@ var startCmd = &cobra.Command{
 		initConfig()
 		Lb = internal.NewLoadBalancer(cfg, proxy.NewReverseProxy)
 		http.HandleFunc("/", Lb.Serve)
-		http.ListenAndServe(":3000", nil)
+		http.ListenAndServe(":"+cfg.ListenPort, nil)
 	},
 }
 

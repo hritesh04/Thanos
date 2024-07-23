@@ -8,7 +8,8 @@ import (
 )
 
 var balancer = map[string]func(config config.Config, proxyFunc proxy.ProxyFunc) types.IBalancer{
-	"round-robin": algorithm.NewRoundRobin,
+	"round-robin":      algorithm.NewRoundRobin,
+	"least-connection": algorithm.NewLeastConnection,
 }
 
 func NewLoadBalancer(cfg config.Config, proxyFunc proxy.ProxyFunc) types.IBalancer {

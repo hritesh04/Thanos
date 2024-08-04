@@ -7,6 +7,7 @@ import (
 	"github.com/hritesh04/thanos/internal/proxy"
 	"github.com/hritesh04/thanos/internal/types"
 	"github.com/hritesh04/thanos/pkg/config"
+	"github.com/hritesh04/thanos/pkg/logger"
 )
 
 type RoundRobin struct {
@@ -19,6 +20,7 @@ type RoundRobin struct {
 
 func NewRoundRobin(cfg config.Config, proxyFunc proxy.ProxyFunc) types.IBalancer {
 	roundRobin := &RoundRobin{}
+	logger.Log.Info("Creating Round Robin Load Balancer")
 	for _, backend := range cfg.Servers {
 		server := &types.Server{
 			Url:   backend,
@@ -30,6 +32,7 @@ func NewRoundRobin(cfg config.Config, proxyFunc proxy.ProxyFunc) types.IBalancer
 }
 
 func (rr *RoundRobin) Serve(w http.ResponseWriter, r *http.Request) {
+
 	rr.Next().ReverseProxyHandler(w, r)
 }
 
@@ -46,4 +49,5 @@ func (rr *RoundRobin) AddServer(proxyServer *types.Server) {
 	defer rr.mutex.Unlock()
 	rr.servers = append(rr.servers, proxyServer)
 	rr.len++
+	logger.Log.Info("Server Added", "Url", proxyServer.Url)
 }

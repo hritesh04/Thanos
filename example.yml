@@ -1,5 +1,7 @@
 type: round-robin
 port: 3000
 backends:
-  - http://localhost:3001
-  - http://localhost:3002
+  - url: http://localhost:3001
+    health_end_point: "/"
+  - url: http://localhost:3002
+    health_end_point: "/"

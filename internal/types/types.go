@@ -12,9 +12,11 @@ type Server struct {
 	ActiveConnection int
 	Mutex            sync.Mutex
 	Proxy            proxy.IProxy
+	HealthEndPoint   string
 }
 
 type IBalancer interface {
 	Serve(w http.ResponseWriter, r *http.Request)
 	AddServer(*Server)
+	CheckHostAlive(string) bool
 }

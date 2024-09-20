@@ -7,6 +7,8 @@ import (
 	"github.com/hritesh04/thanos/internal/proxy"
 	"github.com/hritesh04/thanos/internal/types"
 	"github.com/hritesh04/thanos/pkg/config"
+	health "github.com/hritesh04/thanos/pkg/http"
+	"github.com/hritesh04/thanos/pkg/logger"
 )
 
 type LeastConnection struct {
@@ -21,10 +23,15 @@ func NewLeastConnection(cfg config.Config, proxyFunc proxy.ProxyFunc) types.IBal
 	leastConnection := &LeastConnection{}
 	for _, backend := range cfg.Servers {
 		server := &types.Server{
-			Url:   backend,
-			Proxy: proxyFunc(backend),
+			Url:            backend.Url,
+			Proxy:          proxyFunc(backend.Url),
+			HealthEndPoint: backend.HealthEndPoint,
 		}
 		leastConnection.AddServer(server)
+	}
+	if len(leastConnection.servers) < 1 {
+		logger.Log.Error("No healthy servers")
+		return nil
 	}
 	return leastConnection
 }
@@ -52,6 +59,15 @@ func (lc *LeastConnection) Next() *types.Server {
 	}
 	lc.i = leastConnectionIndex
 	return lc.servers[leastConnectionIndex]
+}
+
+func (lc *LeastConnection) CheckHostAlive(url string) bool {
+	if alive := health.IsHostAlive(url); alive {
+		logger.Log.Info("Server healthy", "url", url)
+		return true
+	}
+	logger.Log.Error("Error checking server health", "url", url)
+	return false
 }
 
 func (lc *LeastConnection) AddServer(proxyServer *types.Server) {

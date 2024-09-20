@@ -32,6 +32,9 @@ var startCmd = &cobra.Command{
 		logger.Log.Info("Config file parsed successfully")
 		logger.Log.Info("Creating Proxies")
 		Lb = internal.NewLoadBalancer(cfg, proxy.NewReverseProxy)
+		if Lb == nil {
+			logger.Log.Error("Unable to Initialize Thanos exiting...")
+		}
 		logger.Log.Info("Proxies created successfully")
 		logger.Log.Info("Starting Thanos Server")
 		http.HandleFunc("/", Lb.Serve)

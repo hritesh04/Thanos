@@ -23,12 +23,25 @@ type RoundRobin struct {
 func NewRoundRobin(cfg config.Config, proxyFunc proxy.ProxyFunc) types.IBalancer {
 	roundRobin := &RoundRobin{}
 	logger.Log.Info("Creating Round Robin Load Balancer")
+	var wg sync.WaitGroup
+	healthCheck := make(chan *types.Server, len(cfg.Servers))
 	for _, backend := range cfg.Servers {
-		server := &types.Server{
-			Url:            backend.Url,
-			Proxy:          proxyFunc(backend.Url),
-			HealthEndPoint: backend.HealthEndPoint,
-		}
+		wg.Add(1)
+		go func(backend config.Server) {
+			defer wg.Done()
+			server := &types.Server{
+				Url:            backend.Url,
+				Proxy:          proxyFunc(backend.Url),
+				HealthEndPoint: backend.HealthEndPoint,
+			}
+			if roundRobin.CheckHostAlive(server.Url) {
+				healthCheck <- server
+			}
+		}(backend)
+	}
+	wg.Wait()
+	close(healthCheck)
+	for server := range healthCheck {
 		roundRobin.AddServer(server)
 	}
 	if len(roundRobin.servers) < 1 {
@@ -47,7 +60,7 @@ func (rr *RoundRobin) CheckHostAlive(url string) bool {
 		logger.Log.Info("Server healthy", "url", url)
 		return true
 	}
-	logger.Log.Error("Error checking server health", "url", url)
+	logger.Log.Error("Server not healthy", "url", url)
 	return false
 }
 
@@ -60,12 +73,6 @@ func (rr *RoundRobin) Next() proxy.IProxy {
 }
 
 func (rr *RoundRobin) AddServer(proxyServer *types.Server) {
-	alive := rr.CheckHostAlive(proxyServer.Url)
-	if alive {
-		rr.servers = append(rr.servers, proxyServer)
-		rr.len++
-		logger.Log.Info("Server Alive Added", "url", proxyServer.Url)
-	} else {
-		logger.Log.Info("Server Not Alive", "url", proxyServer.Url)
-	}
+	rr.servers = append(rr.servers, proxyServer)
+	rr.len++
 }

@@ -3,7 +3,6 @@ package algorithm
 import (
 	"net/http"
 	"sync"
-	"time"
 
 	"github.com/hritesh04/thanos/internal/proxy"
 	"github.com/hritesh04/thanos/internal/types"
@@ -13,11 +12,10 @@ import (
 )
 
 type RoundRobin struct {
-	servers             []*types.Server
-	mutex               sync.Mutex
-	healthCheckInterval time.Duration
-	len                 int
-	i                   int
+	servers []*types.Server
+	mutex   sync.Mutex
+	len     int
+	i       int
 }
 
 func NewRoundRobin(cfg config.Config, proxyFunc proxy.ProxyFunc) types.IBalancer {

@@ -21,12 +21,25 @@ type LeastConnection struct {
 
 func NewLeastConnection(cfg config.Config, proxyFunc proxy.ProxyFunc) types.IBalancer {
 	leastConnection := &LeastConnection{}
+	var wg *sync.WaitGroup
+	healthyServers := make(chan *types.Server, len(cfg.Servers))
 	for _, backend := range cfg.Servers {
-		server := &types.Server{
-			Url:            backend.Url,
-			Proxy:          proxyFunc(backend.Url),
-			HealthEndPoint: backend.HealthEndPoint,
-		}
+		wg.Add(1)
+		go func(backend config.Server) {
+			server := &types.Server{
+				Url:            backend.Url,
+				Proxy:          proxyFunc(backend.Url),
+				HealthEndPoint: backend.HealthEndPoint,
+			}
+			if ok := leastConnection.CheckHostAlive(server.Url); ok {
+				healthyServers <- server
+			}
+			wg.Done()
+		}(backend)
+	}
+	wg.Wait()
+	close(healthyServers)
+	for server := range healthyServers {
 		leastConnection.AddServer(server)
 	}
 	if len(leastConnection.servers) < 1 {
@@ -38,24 +51,20 @@ func NewLeastConnection(cfg config.Config, proxyFunc proxy.ProxyFunc) types.IBal
 
 func (lc *LeastConnection) Serve(w http.ResponseWriter, r *http.Request) {
 	server := lc.Next()
-	server.Mutex.Lock()
 	server.ActiveConnection++
-	server.Mutex.Unlock()
 	server.Proxy.ReverseProxyHandler(w, r)
-	server.Mutex.Lock()
 	server.ActiveConnection--
-	server.Mutex.Unlock()
 }
 
 func (lc *LeastConnection) Next() *types.Server {
 	var leastConnectionIndex int
+	lc.mutex.Lock()
+	defer lc.mutex.Unlock()
 	leastConnection := lc.servers[lc.i].ActiveConnection
 	for i, server := range lc.servers {
-		lc.mutex.Lock()
 		if server.ActiveConnection < leastConnection {
 			leastConnectionIndex = i
 		}
-		lc.mutex.Unlock()
 	}
 	lc.i = leastConnectionIndex
 	return lc.servers[leastConnectionIndex]
@@ -71,8 +80,6 @@ func (lc *LeastConnection) CheckHostAlive(url string) bool {
 }
 
 func (lc *LeastConnection) AddServer(proxyServer *types.Server) {
-	lc.mutex.Lock()
-	defer lc.mutex.Unlock()
 	lc.servers = append(lc.servers, proxyServer)
 	lc.len++
 }

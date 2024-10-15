@@ -21,7 +21,7 @@ type LeastConnection struct {
 
 func NewLeastConnection(cfg config.Config, proxyFunc proxy.ProxyFunc) types.IBalancer {
 	leastConnection := &LeastConnection{}
-	var wg *sync.WaitGroup
+	var wg sync.WaitGroup
 	healthyServers := make(chan *types.Server, len(cfg.Servers))
 	for _, backend := range cfg.Servers {
 		wg.Add(1)

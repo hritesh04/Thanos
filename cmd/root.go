@@ -17,8 +17,6 @@ var rootCmd = &cobra.Command{
 		Perfect balance, as all things should be...." ~ Thanos
 		`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// Do Stuff Here
-		fmt.Println("Hello from root")
 	},
 }
 

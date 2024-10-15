@@ -5,6 +5,7 @@ INSTALL_DIR=/usr/local/bin
 build:
 	go build -ldflags="-s -w -X main.version=1.0.0" -o thanos main.go
 install: build
-	mv $(BINARY_NAME) $(INSTALL_DIR)
+	sudo mv $(BINARY_NAME) $(INSTALL_DIR)
 uninstall:
-	rm -f $(INSTALL_DIR)/$(BINARY_NAME)
+	sudo rm -f $(INSTALL_DIR)/$(BINARY_NAME)
+	sudo rm -r /var/log/thanos
